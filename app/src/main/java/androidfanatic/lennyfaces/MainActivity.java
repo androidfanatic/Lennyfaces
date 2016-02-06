@@ -1,37 +1,72 @@
 package androidfanatic.lennyfaces;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.view.View;
 
-public class MainActivity extends AppCompatActivity {
+import com.hannesdorfmann.mosby.mvp.MvpActivity;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+
+import java.util.List;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
+public class MainActivity
+        extends MvpActivity<MainView, MainPresenter>
+        implements MainView, Drawer.OnDrawerItemClickListener {
+
+    @Bind(R.id.toolbar) Toolbar toolbar;
+    @Bind(R.id.rv_face) RecyclerView faceRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
+        setSupportActionBar(toolbar);
+
+        // setup
+        faceRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        faceRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        faceRecyclerView.setAdapter(getPresenter().getAdapter());
+
+        getPresenter().initUI();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    @NonNull @Override public MainPresenter createPresenter() {
+        return new MainPresenter();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    @Override public void initDrawer(List<String> faceTypes) {
+        DrawerBuilder builder =
+                new DrawerBuilder()
+                        .withActivity(this)
+                        .withToolbar(toolbar)
+                        .withActionBarDrawerToggleAnimated(true)
+                        .withRootView(R.id.rootview)
+                        .withOnDrawerItemClickListener(this);
+        for (String faceType : faceTypes) {
+            builder.addDrawerItems(
+                    new PrimaryDrawerItem()
+                            .withName(faceType)
+                            .withTag(faceType)
+            );
         }
+        builder.build();
+    }
 
-        return super.onOptionsItemSelected(item);
+    @Override public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
+        String faceType = (String) iDrawerItem.getTag();
+        getPresenter().showFaceType(faceType);
+        return false;
     }
 }
+
